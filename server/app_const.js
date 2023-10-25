@@ -7,6 +7,7 @@ const FRONT_BUILD = path.join(FRONT_END_PATH, 'build');
 const INDEX_HTML = path.join(FRONT_BUILD, 'index.html');
 const SCRIPTS = path.join(BASE_PATH, 'scripts');
 const IMPORT_MAP = path.join(SCRIPTS, 'import_map.sh');
+const SCRIPT_TEST = path.join(SCRIPTS, 'script_test.sh');
 const MAP_DATA = path.join(BASE_PATH, 'map-data', 'map.osm.pbf');
 const PORT = 58885
 
@@ -17,7 +18,8 @@ const app_const = {
     SCRIPTS,
     IMPORT_MAP,
     MAP_DATA,
-    PORT
+    PORT,
+    SCRIPT_TEST
 }
 
 console.log(app_const);

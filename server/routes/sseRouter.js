@@ -1,13 +1,9 @@
 const express = require('express');
-const SSE = require('express-sse');
-// const sseRouter = express.Router();
 
-const sseExp = express();
-const sse = new SSE();
+const {sse} = require('../handlers/sseHandler');
 
-sseExp.get('/', sse.init);
+const router = express.Router();
 
-module.exports = {
-  sse,
-  sseExp
-}
+router.get('/', sse.init);
+
+module.exports = router
