@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import {IMPORT_EVENTS} from './constants'
 
 const SseComponent = () => {
-  const [sseData, setSSEData] = useState(null);
+  const [sseData, setSSEData] = useState([]);
   const [sseEventSource, setSSEEventSource] = useState(null);
 
   useEffect(() => {
@@ -14,7 +15,7 @@ const SseComponent = () => {
   }, [sseEventSource]);
 
   const startSSE = () => {
-    const eventSource = new EventSource('http://localhost:58885/import-map-events'); // Replace with your SSE endpoint
+    const eventSource = new EventSource(IMPORT_EVENTS); // Replace with your SSE endpoint
     eventSource.onmessage = (event) => {
       setSSEData(event.data);
     };

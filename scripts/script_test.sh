@@ -8,7 +8,7 @@ sleep 2
 
 echo "log 2"
 sleep 2
-
+exit 1 
 echo "log 3"
 sleep 2
 

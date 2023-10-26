@@ -15,9 +15,9 @@ check_db_user() {
         # Check the result of the creation
         if [ $? -eq 0 ]; then
             echo "User $USER has been created."
-            exit 1
         else
             echo "Failed to create user $USER."
+            exit 1
         fi
     fi
 }
@@ -79,6 +79,7 @@ stop_server() {
         fi
     else
         echo "Apache2 is not installed."
+        exit 1
     fi
     
     # Check if Renderd is installed
@@ -94,6 +95,7 @@ stop_server() {
         fi
     else
         echo "Renderd is not installed."
+        exit 1
     fi
 }
 
@@ -112,6 +114,7 @@ start_server() {
         fi
     else
         echo "Apache2 is not installed."
+        exit 1
     fi
     
     # Check if Renderd is installed
@@ -127,6 +130,7 @@ start_server() {
         fi
     else
         echo "Renderd is not installed."
+        exit 1
     fi
 }
 
@@ -146,11 +150,12 @@ delete_tile_cache() {
         fi
     else
         echo "Directory '$TILE_CACHE' does not exist."
+        exit 1
     fi
 }
 
 import_data() {
-    sudo -u _renderd osm2pgsql -d gis --create --slim  -G --hstore --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua -C 2500 --number-processes 2 -S ~/src/openstreetmap-carto/openstreetmap-carto.style ~/data/china-latest.osm.pbf
+    sudo -u _renderd osm2pgsql -d gis --create --slim  -G --hstore --tag-transform-script ~/src/openstreetmap-carto/openstreetmap-carto.lua -C 2500 --number-processes 2 -S ~/src/openstreetmap-carto/openstreetmap-carto.style ~/src/map-server/map-data/map.osm.pbf
 
     # local shapefile
     cd ~/src/openstreetmap-carto/
@@ -167,6 +172,8 @@ main() {
     create_db
     import_data
     start_server
+
+    echo "Map has been imported!"
 }
 
 main
