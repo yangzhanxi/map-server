@@ -1,4 +1,5 @@
 const { spawn } = require('child_process');
+// const multer = require('multer');
 
 const app_const = require('../app_const');
 const {sseSendMeg} = require('./sseHandler')
@@ -16,8 +17,8 @@ async function importMap(req, res) {
   let msg = 'Start to import map...'
   sseSendMeg('import-map', constructData(msg))
   return new Promise((resolve, reject) => {
-    // const script = spawn('sh', [app_const.IMPORT_MAP]);
-    const script = spawn('sh', [app_const.SCRIPT_TEST]);
+    const script = spawn('bash', [app_const.IMPORT_MAP]);
+    // const script = spawn('sh', [app_const.SCRIPT_TEST]);
 
     script.stdout.on('data', (data) => {
       msg = data.toString();
@@ -25,26 +26,25 @@ async function importMap(req, res) {
     });
 
     script.stderr.on('data', (data) => {
-      msg = `error: ${data.toString()}`;
+      msg = `${data.toString()}`;
       sseSendMeg('import-map', constructData(msg))
     });
 
-    script.stderr.on('error', (error) => {
+    script.on('error', (error) => {
       msg = `error: ${error}`;
       sseSendMeg('import-map', constructData(msg))
-
       reject(error);
     });
 
     script.on('close', (code) => {
       if (code === 0) {
-        msg = 'Map was imported.'
         sseSendMeg('import-map', constructData(msg))
+        res.send('Map was uploaded.')
         resolve();
       } else {
         msg = 'Failed to import map.'
         sseSendMeg('import-map', constructData(msg))
-        res.status(500).send(msg);
+        // res.status(500).send(msg);
         reject(new Error(`Failed to import map ${code}`));
       }
     });
@@ -85,7 +85,6 @@ async function importMapHandler(req, res) {
   try{
     await uploadMap(req, res);
     await importMap(req, res);
-    res.status(200).send('pass.')
   } catch(error) {
     res.status(500).send(error);
   } finally {

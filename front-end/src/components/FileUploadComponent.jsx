@@ -1,11 +1,12 @@
 import React from 'react';
+import {UPLOAD_FILE} from './constants'
 
 function FileUpload() {
   const handleFileUpload = async (e) => {
     const formData = new FormData();
     formData.append('mapFile', e.target.files[0]);
 
-    await fetch('http://localhost:58885/import-map', {
+    await fetch(UPLOAD_FILE, {
       method: 'POST',
       body: formData,
     });
