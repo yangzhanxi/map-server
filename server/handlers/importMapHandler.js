@@ -1,51 +1,42 @@
 const { spawn } = require('child_process');
-// const multer = require('multer');
 
 const app_const = require('../app_const');
-const {sseSendMeg} = require('./sseHandler')
+const {sseSendMsg, sse} = require('./sseHandler')
 const {getIsImporting, setIsImporting} = require('./importStatusHandler')
-
-const constructData = (msg) => {
-  const data = {
-    message: msg,
-    isImporting: getIsImporting()
-  }
-  return JSON.stringify(data)
-}
 
 async function importMap(req, res) {
   let msg = 'Start to import map...'
-  sseSendMeg('import-map', constructData(msg))
+  const eventName = 'import-map'
+  sseSendMsg(eventName, msg)
   return new Promise((resolve, reject) => {
-    const script = spawn('bash', [app_const.IMPORT_MAP]);
-    // const script = spawn('sh', [app_const.SCRIPT_TEST]);
+    // const script = spawn('bash', [app_const.IMPORT_MAP]);
+    const script = spawn('sh', [app_const.SCRIPT_TEST]);
 
     script.stdout.on('data', (data) => {
       msg = data.toString();
-      sseSendMeg('import-map', constructData(msg))
+      sseSendMsg(eventName, msg)
+      sseSendMsg(eventName, msg)
     });
 
     script.stderr.on('data', (data) => {
       msg = `${data.toString()}`;
-      sseSendMeg('import-map', constructData(msg))
+      sseSendMsg(eventName, msg)
     });
 
     script.on('error', (error) => {
       msg = `error: ${error}`;
-      sseSendMeg('import-map', constructData(msg))
+      sseSendMsg(eventName, msg)
       reject(error);
     });
 
     script.on('close', (code) => {
+      setIsImporting(false)
       if (code === 0) {
-        sseSendMeg('import-map', constructData(msg))
-        res.send('Map was uploaded.')
-        resolve();
+        msg = 'Map was imported.'
+        sseSendMsg(eventName, msg);
       } else {
         msg = 'Failed to import map.'
-        sseSendMeg('import-map', constructData(msg))
-        // res.status(500).send(msg);
-        reject(new Error(`Failed to import map ${code}`));
+        sseSendMsg(eventName, msg);
       }
     });
   });
@@ -53,25 +44,30 @@ async function importMap(req, res) {
 
 async function uploadMap(req, res) {
   let msg = '';
+  const eventName = 'Upload Map'
   if (!req.files || Object.keys(req.files).length === 0) {
     msg = `No file was uploaded.`;
-    sseSendMeg('upload-map', constructData(msg))
+    sseSendMsg(eventName, msg)
     return res.status(400).send(msg);
   }
+
   const uploadFile = req.files.mapFile;
-  msg = `Upload file ${uploadFile.name}.`;
-  sseSendMeg('upload-map', constructData(msg))
-  console.log(app_const.MAP_DATA)
+  msg = `Start to upload file ${uploadFile.name}.`;
+  sseSendMsg(eventName, msg);
+
+  msg = `File ${uploadFile.name} is uploading...`;
+  sseSendMsg(eventName, msg);
+
   uploadFile.mv(app_const.MAP_DATA, function(err) {
     if (err) {
       msg = `File ${uploadFile.name} upload was failed.`
-      console.log(err)
-      sseSendMeg('upload-map', constructData(msg))
+      sseSendMsg(eventName, msg)
       return res.status(500).send(err);
     }
+
     msg = `File ${uploadFile.name} was uploaded.`
-    console.log(msg)
-    sseSendMeg('upload-map', constructData(msg))
+    sseSendMsg(eventName, msg)
+    res.status(200).send(msg)
   });
 }
 
@@ -86,7 +82,7 @@ async function importMapHandler(req, res) {
     await uploadMap(req, res);
     await importMap(req, res);
   } catch(error) {
-    res.status(500).send(error);
+    sseSendMsg( constructMsgList('import-map', error))
   } finally {
     setIsImporting(false);
   }

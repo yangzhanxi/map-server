@@ -1,13 +1,17 @@
 const SSE = require('express-sse');
 
-const sse = new SSE();
+const {getIsImporting} = require('./importStatusHandler')
 
-const sseSendMeg = (event, data) => {
-    const id = new Date().getTime().toString();
-    sse.send({event, id, data});
+const sse = new SSE({
+    retry: 10000,
+});
+
+const sseSendMsg = (event, msg) => {
+    const timestamp = new Date().getTime().toString();
+    sse.send({event, timestamp, message: msg, isImporting: getIsImporting()});
 }
 
 module.exports = {
     sse,
-    sseSendMeg
+    sseSendMsg
 }
