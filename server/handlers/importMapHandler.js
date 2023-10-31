@@ -1,16 +1,17 @@
 const { spawn } = require('child_process');
+const multer = require('multer')
 
 const app_const = require('../app_const');
-const {sseSendMsg, sse} = require('./sseHandler')
+const {sseSendMsg} = require('./sseHandler')
 const {getIsImporting, setIsImporting} = require('./importStatusHandler')
 
-async function importMap(req, res) {
+async function importMap() {
   let msg = 'Start to import map...'
   const eventName = 'import-map'
   sseSendMsg(eventName, msg)
   return new Promise((resolve, reject) => {
-    // const script = spawn('bash', [app_const.IMPORT_MAP]);
-    const script = spawn('sh', [app_const.SCRIPT_TEST]);
+    const script = spawn('bash', [app_const.IMPORT_MAP]);
+    // const script = spawn('sh', [app_const.SCRIPT_TEST]);
 
     script.stdout.on('data', (data) => {
       msg = data.toString();
@@ -42,50 +43,54 @@ async function importMap(req, res) {
   });
 }
 
-async function uploadMap(req, res) {
+async function uploadMapMulter(req, res) {
   let msg = '';
-  const eventName = 'Upload Map'
-  if (!req.files || Object.keys(req.files).length === 0) {
-    msg = `No file was uploaded.`;
+  const eventName = 'upload-map'
+  if (!req.file || Object.keys(req.file).length === 0) {
+    msg = `No file uploaded.`;
     sseSendMsg(eventName, msg)
-    return res.status(400).send(msg);
+    return res.status(400).json({
+      error: msg});
   }
 
-  const uploadFile = req.files.mapFile;
-  msg = `Start to upload file ${uploadFile.name}.`;
-  sseSendMsg(eventName, msg);
-
-  msg = `File ${uploadFile.name} is uploading...`;
-  sseSendMsg(eventName, msg);
-
-  uploadFile.mv(app_const.MAP_DATA, function(err) {
-    if (err) {
-      msg = `File ${uploadFile.name} upload was failed.`
-      sseSendMsg(eventName, msg)
-      return res.status(500).send(err);
-    }
-
-    msg = `File ${uploadFile.name} was uploaded.`
-    sseSendMsg(eventName, msg)
-    res.status(200).send(msg)
+  const { originalname, filename, size } = req.file;
+  msg = 'File was uploaded successfully'
+  sseSendMsg(eventName, msg)
+  return res.status(200).json({
+    message: msg,
+    fileInfo: {
+      originalname,
+      filename,
+      size,
+    },
   });
 }
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, '/root/src/map-server/map-data')
+  },
+  filename: function (req, file, cb) {
+    cb(null, 'map.osm.pbf')
+  }
+})
+
+const upload = multer({storage: storage})
 
 async function importMapHandler(req, res) {
   if (getIsImporting()) {
     return res.status(400).send('Can not import map, the server is importing data.')
   }
-
   setIsImporting(true);
 
   try{
-    await uploadMap(req, res);
+    await uploadMapMulter(req, res)
     await importMap(req, res);
   } catch(error) {
-    sseSendMsg( constructMsgList('import-map', error))
+    sseSendMsg('import-map', error)
   } finally {
     setIsImporting(false);
   }
 }
 
-module.exports = importMapHandler;
+module.exports = {upload, importMapHandler};

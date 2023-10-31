@@ -4,7 +4,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
-var fileUpload = require('express-fileupload');
 var compression = require('compression');
 
 const app_const = require('./app_const');
@@ -12,6 +11,7 @@ var indexRouter = require('./routes/index');
 var sseRouter = require('./routes/sseRouter');
 var importMapRouter = require('./routes/importMapRouter');
 var statusRouter = require('./routes/statusRouter');
+const multer = require('multer');
 
 var app = express();
 
@@ -23,15 +23,14 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(cors());
 app.use(compression());
-app.use(fileUpload());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(app_const.FRONT_BUILD));
 
 app.use('/', indexRouter);
 app.use('/import-map-events', sseRouter);
-app.use('/import-map', importMapRouter);
 app.use('/import-status', statusRouter)
+app.use('/import-map', importMapRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -40,6 +39,17 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      error: 'File upload error',
+      message: err.message
+    })
+   } else if (err) {
+    return res.status(500).json({
+      error: 'Server error',
+      message: err.message
+    })
+  }
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
