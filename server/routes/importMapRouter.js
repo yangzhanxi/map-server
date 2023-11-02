@@ -1,9 +1,9 @@
 const express = require('express');
 
-const importMapHandler = require('../handlers/importMapHandler');
+const {upload ,importMapHandler} = require('../handlers/importMapHandler');
 
 const router = express.Router();
 
-router.post('/', importMapHandler)
+router.post('/', upload.single('mapFile'), importMapHandler)
 
 module.exports = router

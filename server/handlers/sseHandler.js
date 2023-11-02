@@ -3,7 +3,7 @@ const SSE = require('express-sse');
 const {getIsImporting} = require('./importStatusHandler')
 
 const sse = new SSE({
-    retry: 10000,
+    retry: 2000,
 });
 
 const sseSendMsg = (event, msg) => {
